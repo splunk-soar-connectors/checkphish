@@ -1,0 +1,207 @@
+{
+    "appid": "e51a8b12-6699-40e3-a418-827be4fc852d",
+    "name": "CheckPhish",
+    "description": "This app provides investigative actions for bolster.ai and checkphish.ai",
+    "type": "devops",
+    "product_vendor": "Bolster",
+    "logo": "checkphish.svg",
+    "logo_dark": "checkphish_dark.svg",
+    "product_name": "Checkphish",
+    "python_version": "3",
+    "product_version_regex": ".*",
+    "publisher": "Splunk Community",
+    "license": "Copyright (c) Splunk Community, 2021",
+    "app_version": "1.0.0",
+    "utctime_updated": "2021-10-13T11:53:16.531448Z",
+    "package_name": "phantom_checkphish",
+    "main_module": "checkphish_connector.py",
+    "min_phantom_version": "4.9.39220",
+    "app_wizard_version": "1.0.0",
+    "configuration": {
+        "api_url": {
+            "description": "API URL for Scan Requests",
+            "data_type": "string",
+            "required": true,
+            "value_list": [],
+            "default": "https://developers.checkphish.ai/api",
+            "order": 0
+        },
+        "api_key": {
+            "description": "API Key",
+            "data_type": "password",
+            "required": true,
+            "order": 1
+        }
+    },
+    "actions": [
+        {
+            "action": "test connectivity",
+            "identifier": "test_connectivity",
+            "description": "Validate the asset configuration for connectivity using supplied configuration",
+            "verbose": "",
+            "type": "test",
+            "read_only": true,
+            "parameters": {},
+            "output": [],
+            "versions": "EQ(*)"
+        },
+        {
+            "action": "check status",
+            "identifier": "check_status",
+            "description": "Get URL scan Results",
+            "verbose": "",
+            "type": "investigate",
+            "read_only": true,
+            "parameters": {
+                "job_id": {
+                    "description": "Job ID retrieved during a previous URL scan",
+                    "data_type": "string",
+                    "required": true,
+                    "primary": true,
+                    "order": 0
+                }
+            },
+            "output": [
+                {
+                    "data_path": "action_result.parameter.job_id",
+                    "data_type": "string",
+                    "column_name": "job_id",
+                    "column_order": 0
+                },
+                {
+                    "data_path": "action_result.status",
+                    "data_type": "string",
+                    "column_name": "status",
+                    "column_order": 1
+                },
+                {
+                    "data_path": "action_result.message",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.job_id",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.status",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.url",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.url_sha256",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.disposition",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.brand",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.insights",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.resolved",
+                    "data_type": "boolean"
+                },
+                {
+                    "data_path": "action_result.data.*.error",
+                    "data_type": "boolean"
+                },
+                {
+                    "data_path": "action_result.data.*.screenshot_path",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.summary",
+                    "data_type": "string"
+                }
+            ],
+            "render": {
+                "type": "table"
+            },
+            "versions": "EQ(*)"
+        },
+        {
+            "action": "detonate url",
+            "identifier": "detonate_url",
+            "description": "Submit a URL for scan",
+            "verbose": "",
+            "type": "investigate",
+            "read_only": false,
+            "parameters": {
+                "url": {
+                    "description": "URL to be scanned",
+                    "data_type": "string",
+                    "required": true,
+                    "primary": true,
+                    "contains": ["url"],
+                    "order": 0
+                },
+                "scan_type": {
+                    "description": "Type of scan to run",
+                    "data_type": "string",
+                    "required": true,
+                    "primary": true,
+                    "value_list": [
+                        "quick",
+                        "full"
+                    ],
+                    "default": "quick",
+                    "order": 1
+                }
+            },
+            "output": [
+                {
+                    "data_path": "action_result.parameter.url",
+                    "data_type": "string",
+                    "contains": ["url"],
+                    "column_name": "url",
+                    "column_order": 0
+                },
+                {
+                    "data_path": "action_result.parameter.scan_type",
+                    "data_type": "string",
+                    "column_name": "scan_type",
+                    "column_order": 1
+                },
+                {
+                    "data_path": "action_result.status",
+                    "data_type": "string",
+                    "column_name": "status",
+                    "column_order": 2
+                },
+                {
+                    "data_path": "action_result.message",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.jobID",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.timestamp",
+                    "data_type": "numeric"
+                },
+                {
+                    "data_path": "action_result.summary",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.summary.job_id",
+                    "data_type": "string"
+                }
+            ],
+            "render": {
+                "type": "table"
+            },
+            "versions": "EQ(*)"
+        }
+    ]
+}

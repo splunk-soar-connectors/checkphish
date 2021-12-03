@@ -1,4 +1,9 @@
-#!/usr/bin/python
+# File: checkphish_connector.py
+#
+# Copyright (c) Splunk Community, 2021
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# !/usr/bin/python
 # -*- coding: utf-8 -*-
 
 # Python 3 Compatibility imports
@@ -12,6 +17,9 @@ import requests
 from bs4 import BeautifulSoup
 from phantom.action_result import ActionResult
 from phantom.base_connector import BaseConnector
+
+# Constants imports
+from checkphish_consts import *
 
 
 class RetVal(tuple):
@@ -33,13 +41,46 @@ class CheckphishConnector(BaseConnector):
         self._api_url = None
         self._api_key = None
 
+    def _get_error_message_from_exception(self, e):
+        """ This method is used to get appropriate error messages from the exception.
+        :param e: Exception object
+        :return: error message
+        """
+
+        try:
+            if e.args:
+                if len(e.args) > 1:
+                    error_code = e.args[0]
+                    error_msg = e.args[1]
+                elif len(e.args) == 1:
+                    error_code = CHECKPHISH_ERR_CODE_MSG
+                    error_msg = e.args[0]
+            else:
+                error_code = CHECKPHISH_ERR_CODE_MSG
+                error_msg = CHECKPHISH_ERR_MSG_UNAVAILABLE
+        except:
+            error_code = CHECKPHISH_ERR_CODE_MSG
+            error_msg = CHECKPHISH_ERR_MSG_UNAVAILABLE
+
+        try:
+            if error_code in CHECKPHISH_ERR_CODE_MSG:
+                error_text = "Error Message: {0}".format(error_msg)
+            else:
+                error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
+        except:
+            self.debug_print("Error occurred while parsing error message")
+            error_text = CHECKPHISH_PARSE_ERR_MSG
+
+        return error_text
+
     def _process_empty_response(self, response, action_result):
         if response.status_code == 200:
             return RetVal(phantom.APP_SUCCESS, {})
 
+        error_msg = "Status code: {}. Empty response and no information in the header".format(response.status_code)
         return RetVal(
             action_result.set_status(
-                phantom.APP_ERROR, "Empty response and no information in the header"
+                phantom.APP_ERROR, error_msg
             ),
             None,
         )
@@ -50,6 +91,9 @@ class CheckphishConnector(BaseConnector):
 
         try:
             soup = BeautifulSoup(response.text, "html.parser")
+            # Remove the script, style, footer and navigation part from the HTML message
+            for element in soup(["script", "style", "footer", "nav"]):
+                element.extract()
             error_text = soup.text
             split_lines = error_text.split("\n")
             split_lines = [x.strip() for x in split_lines if x.strip()]
@@ -72,7 +116,7 @@ class CheckphishConnector(BaseConnector):
             return RetVal(
                 action_result.set_status(
                     phantom.APP_ERROR,
-                    "Unable to parse JSON response. Error: {0}".format(str(e)),
+                    "Unable to parse JSON response. Error: {0}".format(self._get_error_message_from_exception(e)),
                 ),
                 None,
             )
@@ -137,7 +181,7 @@ class CheckphishConnector(BaseConnector):
             )
 
         # Create a URL to connect to
-        url = self._api_url + endpoint
+        url = "{}{}".format(self._api_url, endpoint)
 
         try:
             r = request_func(
@@ -147,7 +191,7 @@ class CheckphishConnector(BaseConnector):
             return RetVal(
                 action_result.set_status(
                     phantom.APP_ERROR,
-                    "Error Connecting to server. Details: {0}".format(str(e)),
+                    "Error Connecting to server. Details: {0}".format(self._get_error_message_from_exception(e)),
                 ),
                 resp_json,
             )
@@ -171,7 +215,7 @@ class CheckphishConnector(BaseConnector):
         payload = {"apiKey": self._api_key, "jobID": job_id, "insights": True}
 
         ret_val, response = self._make_rest_call(
-            "/neo/scan/status",
+            CHECKPHISH_CHECK_STATUS_ENDPOINT,
             action_result,
             method="post",
             params=None,
@@ -185,8 +229,12 @@ class CheckphishConnector(BaseConnector):
         action_result.add_data(response)
 
         summary = action_result.update_summary({})
-        summary["job_id"] = response["job_id"]
-        summary["status"] = response["status"]
+
+        try:
+            summary["job_id"] = response["job_id"]
+            summary["status"] = response["status"]
+        except Exception as e:
+            return action_result.set_status(phantom.APP_ERROR, "Error occurred while processing the response from server. {}".format(self._get_error_message_from_exception(e)))
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
@@ -199,6 +247,9 @@ class CheckphishConnector(BaseConnector):
         url = param["url"]
         scan_type = param["scan_type"]
 
+        if scan_type not in CHECKPHISH_SCAN_TYPE_VALUE_LIST:
+            return action_result.set_status(phantom.APP_ERROR, "Please provide a valid input from {} for 'scan_type' action parameter".format(CHECKPHISH_SCAN_TYPE_VALUE_LIST))
+
         payload = {
             "apiKey": self._api_key,
             "urlInfo": {"url": url},
@@ -206,7 +257,7 @@ class CheckphishConnector(BaseConnector):
         }
 
         ret_val, response = self._make_rest_call(
-            "/neo/scan/",
+            CHECKPHISH_DETONATE_URL_ENDPOINT,
             action_result,
             method="post",
             params=None,
@@ -220,7 +271,11 @@ class CheckphishConnector(BaseConnector):
         action_result.add_data(response)
 
         summary = action_result.update_summary({})
-        summary["job_id"] = response["jobID"]
+
+        try:
+            summary["job_id"] = response["jobID"]
+        except Exception as e:
+            return action_result.set_status(phantom.APP_ERROR, "Error occurred while processing the response from server. {}".format(self._get_error_message_from_exception(e)))
 
         return action_result.set_status(phantom.APP_SUCCESS)
 

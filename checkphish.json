@@ -10,7 +10,7 @@
     "python_version": "3",
     "product_version_regex": ".*",
     "publisher": "Splunk Community",
-    "license": "Copyright (c) Splunk Community, 2021",
+    "license": "Copyright (c) 2021 Splunk Inc.",
     "app_version": "1.0.0",
     "utctime_updated": "2021-10-13T11:53:16.531448Z",
     "package_name": "phantom_checkphish",
@@ -108,11 +108,18 @@
                 },
                 {
                     "data_path": "action_result.data.*.url",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "contains":[
+                        "url"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.url_sha256",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "contains":[
+                        "url",
+                        "sha256"
+                    ]
                 },
                 {
                     "data_path": "action_result.status",
@@ -214,7 +221,7 @@
                     "data_path": "action_result.status",
                     "data_type": "string",
                     "column_name": "Status",
-                    "column_order": 2,
+                    "column_order": 3,
                     "example_values": [
                         "success",
                         "failed"

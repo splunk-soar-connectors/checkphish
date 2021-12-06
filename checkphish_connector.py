@@ -1,8 +1,18 @@
 # File: checkphish_connector.py
 #
-# Copyright (c) Splunk Community, 2021
+# Copyright (c) 2021 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under
+# the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific language governing permissions
+# and limitations under the License.
+
 # !/usr/bin/python
 # -*- coding: utf-8 -*-
 
@@ -12,6 +22,7 @@ from __future__ import print_function, unicode_literals
 import json
 import sys
 
+import os
 import phantom.app as phantom
 import requests
 from bs4 import BeautifulSoup
@@ -33,13 +44,14 @@ class CheckphishConnector(BaseConnector):
         # Call the BaseConnectors init first
         super(CheckphishConnector, self).__init__()
 
-        self._state = None
+        self._state = {}
 
         # Variable to hold a base_url in case the app makes REST calls
         # Do note that the app json defines the asset config, so please
         # modify this as you deem fit.
         self._api_url = None
         self._api_key = None
+        self._proxy = None
 
     def _get_error_message_from_exception(self, e):
         """ This method is used to get appropriate error messages from the exception.
@@ -47,34 +59,22 @@ class CheckphishConnector(BaseConnector):
         :return: error message
         """
 
+        error_code = CHECKPHISH_ERR_CODE_MSG
+        error_msg = CHECKPHISH_ERR_MSG_UNAVAILABLE
         try:
             if e.args:
                 if len(e.args) > 1:
                     error_code = e.args[0]
                     error_msg = e.args[1]
                 elif len(e.args) == 1:
-                    error_code = CHECKPHISH_ERR_CODE_MSG
                     error_msg = e.args[0]
-            else:
-                error_code = CHECKPHISH_ERR_CODE_MSG
-                error_msg = CHECKPHISH_ERR_MSG_UNAVAILABLE
         except:
-            error_code = CHECKPHISH_ERR_CODE_MSG
-            error_msg = CHECKPHISH_ERR_MSG_UNAVAILABLE
+            pass
 
-        try:
-            if error_code in CHECKPHISH_ERR_CODE_MSG:
-                error_text = "Error Message: {0}".format(error_msg)
-            else:
-                error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
-        except:
-            self.debug_print("Error occurred while parsing error message")
-            error_text = CHECKPHISH_PARSE_ERR_MSG
-
-        return error_text
+        return "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
 
     def _process_empty_response(self, response, action_result):
-        if response.status_code == 200:
+        if response.status_code == 200 or response.status_code == 204:
             return RetVal(phantom.APP_SUCCESS, {})
 
         error_msg = "Status code: {}. Empty response and no information in the header".format(response.status_code)
@@ -101,7 +101,7 @@ class CheckphishConnector(BaseConnector):
         except:
             error_text = "Cannot parse error details"
 
-        message = "Status Code: {0}. Data from server:\n{1}\n".format(
+        message = "Status Code: {0}. Data from server: {1}".format(
             status_code, error_text
         )
 
@@ -185,7 +185,7 @@ class CheckphishConnector(BaseConnector):
 
         try:
             r = request_func(
-                url, verify=config.get("verify_server_cert", False), **kwargs
+                url, verify=config.get("verify_server_cert", False), proxies=self._proxy, **kwargs
             )
         except Exception as e:
             return RetVal(
@@ -226,15 +226,16 @@ class CheckphishConnector(BaseConnector):
         if phantom.is_fail(ret_val):
             return action_result.get_status()
 
+        error_message = response.get("errorMessage")
+        if error_message and len(error_message) > 0:
+            return action_result.set_status(phantom.APP_ERROR, error_message)
+
         action_result.add_data(response)
 
         summary = action_result.update_summary({})
 
-        try:
-            summary["job_id"] = response["job_id"]
-            summary["status"] = response["status"]
-        except Exception as e:
-            return action_result.set_status(phantom.APP_ERROR, "Error occurred while processing the response from server. {}".format(self._get_error_message_from_exception(e)))
+        summary["job_id"] = response.get("job_id")
+        summary["status"] = response.get("status")
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
@@ -246,9 +247,6 @@ class CheckphishConnector(BaseConnector):
 
         url = param["url"]
         scan_type = param["scan_type"]
-
-        if scan_type not in CHECKPHISH_SCAN_TYPE_VALUE_LIST:
-            return action_result.set_status(phantom.APP_ERROR, "Please provide a valid input from {} for 'scan_type' action parameter".format(CHECKPHISH_SCAN_TYPE_VALUE_LIST))
 
         payload = {
             "apiKey": self._api_key,
@@ -268,14 +266,15 @@ class CheckphishConnector(BaseConnector):
         if phantom.is_fail(ret_val):
             return action_result.get_status()
 
+        error_message = response.get("errorMessage")
+        if error_message and len(error_message) > 0:
+            return action_result.set_status(phantom.APP_ERROR, error_message)
+
         action_result.add_data(response)
 
         summary = action_result.update_summary({})
 
-        try:
-            summary["job_id"] = response["jobID"]
-        except Exception as e:
-            return action_result.set_status(phantom.APP_ERROR, "Error occurred while processing the response from server. {}".format(self._get_error_message_from_exception(e)))
+        summary["job_id"] = response.get("jobID")
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
@@ -301,7 +300,28 @@ class CheckphishConnector(BaseConnector):
     def initialize(self):
         self._state = self.load_state()
 
+        self._state = self.load_state()
+
+        if not isinstance(self._state, dict):
+            self.debug_print("Resetting the state file with the default format")
+            self._state = {
+                "app_version": self.get_app_json().get('app_version')
+            }
+            return self.set_status(phantom.APP_ERROR, CHECKPHISH_STATE_FILE_CORRUPT_ERR)
+
         config = self.get_config()
+
+        self._proxy = {}
+        env_vars = config.get('_reserved_environment_variables', {})
+        if 'HTTP_PROXY' in env_vars:
+            self._proxy['http'] = env_vars['HTTP_PROXY']['value']
+        elif 'HTTP_PROXY' in os.environ:
+            self._proxy['http'] = os.environ.get('HTTP_PROXY')
+
+        if 'HTTPS_PROXY' in env_vars:
+            self._proxy['https'] = env_vars['HTTPS_PROXY']['value']
+        elif 'HTTPS_PROXY' in os.environ:
+            self._proxy['https'] = os.environ.get('HTTPS_PROXY')
 
         self._api_url = config["api_url"]
         self._api_key = config["api_key"]

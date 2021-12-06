@@ -1,1 +1,4 @@
-**Unreleased**
+Checkphish Release Notes
+
+* Initial release
+

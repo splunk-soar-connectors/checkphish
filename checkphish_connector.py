@@ -20,9 +20,9 @@
 from __future__ import print_function, unicode_literals
 
 import json
+import os
 import sys
 
-import os
 import phantom.app as phantom
 import requests
 from bs4 import BeautifulSoup
@@ -227,7 +227,7 @@ class CheckphishConnector(BaseConnector):
             return action_result.get_status()
 
         error_message = response.get("errorMessage")
-        if error_message and len(error_message) > 0:
+        if error_message:
             return action_result.set_status(phantom.APP_ERROR, error_message)
 
         action_result.add_data(response)
@@ -267,7 +267,7 @@ class CheckphishConnector(BaseConnector):
             return action_result.get_status()
 
         error_message = response.get("errorMessage")
-        if error_message and len(error_message) > 0:
+        if error_message:
             return action_result.set_status(phantom.APP_ERROR, error_message)
 
         action_result.add_data(response)

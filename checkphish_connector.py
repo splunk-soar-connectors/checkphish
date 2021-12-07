@@ -13,14 +13,10 @@
 # either express or implied. See the License for the specific language governing permissions
 # and limitations under the License.
 
-# !/usr/bin/python
-# -*- coding: utf-8 -*-
-
 # Python 3 Compatibility imports
 from __future__ import print_function, unicode_literals
 
 import json
-import os
 import sys
 
 import phantom.app as phantom
@@ -51,7 +47,6 @@ class CheckphishConnector(BaseConnector):
         # modify this as you deem fit.
         self._api_url = None
         self._api_key = None
-        self._proxy = None
 
     def _get_error_message_from_exception(self, e):
         """ This method is used to get appropriate error messages from the exception.
@@ -121,6 +116,10 @@ class CheckphishConnector(BaseConnector):
                 None,
             )
 
+        error_message = resp_json.get("errorMessage")
+        if error_message:
+            return RetVal(action_result.set_status(phantom.APP_ERROR, error_message), None)
+
         # Please specify the status codes here
         if 200 <= r.status_code < 399:
             return RetVal(phantom.APP_SUCCESS, resp_json)
@@ -185,7 +184,7 @@ class CheckphishConnector(BaseConnector):
 
         try:
             r = request_func(
-                url, verify=config.get("verify_server_cert", False), proxies=self._proxy, **kwargs
+                url, verify=config.get("verify_server_cert", False), **kwargs
             )
         except Exception as e:
             return RetVal(
@@ -226,10 +225,6 @@ class CheckphishConnector(BaseConnector):
         if phantom.is_fail(ret_val):
             return action_result.get_status()
 
-        error_message = response.get("errorMessage")
-        if error_message:
-            return action_result.set_status(phantom.APP_ERROR, error_message)
-
         action_result.add_data(response)
 
         summary = action_result.update_summary({})
@@ -265,10 +260,6 @@ class CheckphishConnector(BaseConnector):
 
         if phantom.is_fail(ret_val):
             return action_result.get_status()
-
-        error_message = response.get("errorMessage")
-        if error_message:
-            return action_result.set_status(phantom.APP_ERROR, error_message)
 
         action_result.add_data(response)
 
@@ -310,18 +301,6 @@ class CheckphishConnector(BaseConnector):
             return self.set_status(phantom.APP_ERROR, CHECKPHISH_STATE_FILE_CORRUPT_ERR)
 
         config = self.get_config()
-
-        self._proxy = {}
-        env_vars = config.get('_reserved_environment_variables', {})
-        if 'HTTP_PROXY' in env_vars:
-            self._proxy['http'] = env_vars['HTTP_PROXY']['value']
-        elif 'HTTP_PROXY' in os.environ:
-            self._proxy['http'] = os.environ.get('HTTP_PROXY')
-
-        if 'HTTPS_PROXY' in env_vars:
-            self._proxy['https'] = env_vars['HTTPS_PROXY']['value']
-        elif 'HTTPS_PROXY' in os.environ:
-            self._proxy['https'] = os.environ.get('HTTPS_PROXY')
 
         self._api_url = config["api_url"]
         self._api_key = config["api_key"]

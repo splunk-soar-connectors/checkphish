@@ -14,4 +14,4 @@
 [comment]: # "  and limitations under the License."
 [comment]: # ""
 
-This app does not implement the "test connectivity" action.
+Please note that running the test connectivity action on this app will submit a URL for detonation potentially counting against API key quota.

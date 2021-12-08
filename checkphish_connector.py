@@ -220,6 +220,7 @@ class CheckphishConnector(BaseConnector):
         )
 
         if phantom.is_fail(ret_val):
+            self.save_progress("Test Connectivity Failed")
             return action_result.get_status()
 
         self.save_progress("Successfully submitted URL")

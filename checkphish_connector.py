@@ -200,6 +200,29 @@ class CheckphishConnector(BaseConnector):
     def _handle_test_connectivity(self, param):
         action_result = self.add_action_result(ActionResult(dict(param)))
 
+        url = "https://bolster.ai"
+        scan_type = "quick"
+
+        payload = {
+            "apiKey": self._api_key,
+            "urlInfo": {"url": url},
+            "scanType": scan_type,
+        }
+        self.save_progress("Submitting URL: {}".format(url))
+
+        ret_val, response = self._make_rest_call(
+            CHECKPHISH_DETONATE_URL_ENDPOINT,
+            action_result,
+            method="post",
+            params=None,
+            headers=None,
+            json=payload,
+        )
+
+        if phantom.is_fail(ret_val):
+            return action_result.get_status()
+
+        self.save_progress("Successfully submitted URL")
         self.save_progress("Test Connectivity Passed")
         return action_result.set_status(phantom.APP_SUCCESS)
 

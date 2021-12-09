@@ -315,8 +315,6 @@ class CheckphishConnector(BaseConnector):
     def initialize(self):
         self._state = self.load_state()
 
-        self._state = self.load_state()
-
         if not isinstance(self._state, dict):
             self.debug_print("Resetting the state file with the default format")
             self._state = {

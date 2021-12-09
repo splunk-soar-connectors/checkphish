@@ -11,8 +11,8 @@
     "product_version_regex": ".*",
     "publisher": "Splunk Community",
     "license": "Copyright (c) 2021 Splunk Inc.",
-    "app_version": "1.0.0",
-    "utctime_updated": "2021-10-13T11:53:16.531448Z",
+    "app_version": "1.0.1",
+    "utctime_updated": "2021-12-09T08:48:53.000000Z",
     "package_name": "phantom_checkphish",
     "main_module": "checkphish_connector.py",
     "min_phantom_version": "5.0.0",
@@ -117,14 +117,14 @@
                 {
                     "data_path": "action_result.data.*.url",
                     "data_type": "string",
-                    "contains":[
+                    "contains": [
                         "url"
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.url_sha256",
                     "data_type": "string",
-                    "contains":[
+                    "contains": [
                         "url",
                         "sha256"
                     ]

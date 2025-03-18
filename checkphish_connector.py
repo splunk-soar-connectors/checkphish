@@ -1,6 +1,6 @@
 # File: checkphish_connector.py
 #
-# Copyright (c) 2021 Splunk Inc.
+# Copyright (c) 2021-2025 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,7 +14,6 @@
 # and limitations under the License.
 
 # Python 3 Compatibility imports
-from __future__ import print_function, unicode_literals
 
 import json
 import sys
@@ -36,9 +35,8 @@ class RetVal(tuple):
 
 class CheckphishConnector(BaseConnector):
     def __init__(self):
-
         # Call the BaseConnectors init first
-        super(CheckphishConnector, self).__init__()
+        super().__init__()
 
         self._state = {}
 
@@ -49,7 +47,7 @@ class CheckphishConnector(BaseConnector):
         self._api_key = None
 
     def _get_error_message_from_exception(self, e):
-        """ This method is used to get appropriate error messages from the exception.
+        """This method is used to get appropriate error messages from the exception.
         :param e: Exception object
         :return: error message
         """
@@ -66,17 +64,15 @@ class CheckphishConnector(BaseConnector):
         except:
             pass
 
-        return "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
+        return f"Error Code: {error_code}. Error Message: {error_msg}"
 
     def _process_empty_response(self, response, action_result):
         if response.status_code == 200 or response.status_code == 204:
             return RetVal(phantom.APP_SUCCESS, {})
 
-        error_msg = "Status code: {}. Empty response and no information in the header".format(response.status_code)
+        error_msg = f"Status code: {response.status_code}. Empty response and no information in the header"
         return RetVal(
-            action_result.set_status(
-                phantom.APP_ERROR, error_msg
-            ),
+            action_result.set_status(phantom.APP_ERROR, error_msg),
             None,
         )
 
@@ -96,9 +92,7 @@ class CheckphishConnector(BaseConnector):
         except:
             error_text = "Cannot parse error details"
 
-        message = "Status Code: {0}. Data from server: {1}".format(
-            status_code, error_text
-        )
+        message = f"Status Code: {status_code}. Data from server: {error_text}"
 
         message = message.replace("{", "{{").replace("}", "}}")
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
@@ -111,7 +105,7 @@ class CheckphishConnector(BaseConnector):
             return RetVal(
                 action_result.set_status(
                     phantom.APP_ERROR,
-                    "Unable to parse JSON response. Error: {0}".format(self._get_error_message_from_exception(e)),
+                    f"Unable to parse JSON response. Error: {self._get_error_message_from_exception(e)}",
                 ),
                 None,
             )
@@ -125,9 +119,7 @@ class CheckphishConnector(BaseConnector):
             return RetVal(phantom.APP_SUCCESS, resp_json)
 
         # You should process the error returned in the json
-        message = "Error from server. Status Code: {0} Data from server: {1}".format(
-            r.status_code, r.text.replace("{", "{{").replace("}", "}}")
-        )
+        message = "Error from server. Status Code: {} Data from server: {}".format(r.status_code, r.text.replace("{", "{{").replace("}", "}}"))
 
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
 
@@ -156,7 +148,7 @@ class CheckphishConnector(BaseConnector):
             return self._process_empty_response(r, action_result)
 
         # everything else is actually an error at this point
-        message = "Can't process response from server. Status Code: {0} Data from server: {1}".format(
+        message = "Can't process response from server. Status Code: {} Data from server: {}".format(
             r.status_code, r.text.replace("{", "{{").replace("}", "}}")
         )
 
@@ -173,24 +165,20 @@ class CheckphishConnector(BaseConnector):
             request_func = getattr(requests, method)
         except AttributeError:
             return RetVal(
-                action_result.set_status(
-                    phantom.APP_ERROR, "Invalid method: {0}".format(method)
-                ),
+                action_result.set_status(phantom.APP_ERROR, f"Invalid method: {method}"),
                 resp_json,
             )
 
         # Create a URL to connect to
-        url = "{}{}".format(self._api_url, endpoint)
+        url = f"{self._api_url}{endpoint}"
 
         try:
-            r = request_func(
-                url, verify=config.get("verify_server_cert", False), **kwargs
-            )
+            r = request_func(url, verify=config.get("verify_server_cert", False), **kwargs)
         except Exception as e:
             return RetVal(
                 action_result.set_status(
                     phantom.APP_ERROR,
-                    "Error Connecting to server. Details: {0}".format(self._get_error_message_from_exception(e)),
+                    f"Error Connecting to server. Details: {self._get_error_message_from_exception(e)}",
                 ),
                 resp_json,
             )
@@ -208,7 +196,7 @@ class CheckphishConnector(BaseConnector):
             "urlInfo": {"url": url},
             "scanType": scan_type,
         }
-        self.save_progress("Submitting URL: {}".format(url))
+        self.save_progress(f"Submitting URL: {url}")
 
         ret_val, response = self._make_rest_call(
             CHECKPHISH_DETONATE_URL_ENDPOINT,
@@ -228,9 +216,7 @@ class CheckphishConnector(BaseConnector):
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def _handle_check_status(self, param):
-        self.save_progress(
-            "In action handler for: {0}".format(self.get_action_identifier())
-        )
+        self.save_progress(f"In action handler for: {self.get_action_identifier()}")
         action_result = self.add_action_result(ActionResult(dict(param)))
 
         job_id = param["job_id"]
@@ -259,9 +245,7 @@ class CheckphishConnector(BaseConnector):
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def _handle_detonate_url(self, param):
-        self.save_progress(
-            "In action handler for: {0}".format(self.get_action_identifier())
-        )
+        self.save_progress(f"In action handler for: {self.get_action_identifier()}")
         action_result = self.add_action_result(ActionResult(dict(param)))
 
         url = param["url"]
@@ -317,9 +301,7 @@ class CheckphishConnector(BaseConnector):
 
         if not isinstance(self._state, dict):
             self.debug_print("Resetting the state file with the default format")
-            self._state = {
-                "app_version": self.get_app_json().get('app_version')
-            }
+            self._state = {"app_version": self.get_app_json().get("app_version")}
             return self.set_status(phantom.APP_ERROR, CHECKPHISH_STATE_FILE_CORRUPT_ERR)
 
         config = self.get_config()
@@ -338,13 +320,14 @@ def main():
     import argparse
 
     import pudb
+
     pudb.set_trace()
 
     argparser = argparse.ArgumentParser()
 
-    argparser.add_argument('input_test_json', help='Input Test JSON file')
-    argparser.add_argument('-u', '--username', help='username', required=False)
-    argparser.add_argument('-p', '--password', help='password', required=False)
+    argparser.add_argument("input_test_json", help="Input Test JSON file")
+    argparser.add_argument("-u", "--username", help="username", required=False)
+    argparser.add_argument("-p", "--password", help="password", required=False)
 
     args = argparser.parse_args()
     session_id = None
@@ -354,16 +337,16 @@ def main():
         try:
             print("Accessing the Login page")
             r = requests.get(login_url, timeout=60)
-            csrftoken = r.cookies['csrftoken']
-            data = {'username': args.username, 'password': args.password, 'csrfmiddlewaretoken': csrftoken}
-            headers = {'Cookie': 'csrftoken={0}'.format(csrftoken), 'Referer': login_url}
+            csrftoken = r.cookies["csrftoken"]
+            data = {"username": args.username, "password": args.password, "csrfmiddlewaretoken": csrftoken}
+            headers = {"Cookie": f"csrftoken={csrftoken}", "Referer": login_url}
 
             print("Logging into Platform to get the session id")
             r2 = requests.post(login_url, data=data, headers=headers, timeout=60)
-            session_id = r2.cookies['sessionid']
+            session_id = r2.cookies["sessionid"]
 
         except Exception as e:
-            print("Unable to get session id from the platform. Error: {0}".format(str(e)))
+            print(f"Unable to get session id from the platform. Error: {e!s}")
             sys.exit(1)
 
     if len(sys.argv) < 2:
@@ -373,7 +356,7 @@ def main():
     with open(sys.argv[1]) as f:
         in_json = f.read()
         in_json = json.loads(in_json)
-        print(json.dumps(in_json, indent=' ' * 4))
+        print(json.dumps(in_json, indent=" " * 4))
 
         # Create the connector class object
         connector = CheckphishConnector()
@@ -381,7 +364,7 @@ def main():
         connector.print_progress_message = True
 
         if session_id is not None:
-            in_json['user_session_token'] = session_id
+            in_json["user_session_token"] = session_id
 
         ret_val = connector._handle_action(json.dumps(in_json), None)
         print(json.dumps(json.loads(ret_val), indent=4))

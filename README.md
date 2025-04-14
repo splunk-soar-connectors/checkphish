@@ -1,7 +1,7 @@
 # CheckPhish
 
 Publisher: Splunk Community \
-Connector Version: 1.0.1 \
+Connector Version: 1.0.2 \
 Product Vendor: Bolster \
 Product Name: Checkphish \
 Minimum Product Version: 5.0.0

@@ -1,1 +1,3 @@
 **Unreleased**
+
+* Verify API server TLS certificates by default. This changes the default for existing assets.

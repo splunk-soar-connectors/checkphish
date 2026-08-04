@@ -1,9 +1,9 @@
 # CheckPhish
 
-Publisher: Splunk Community \
-Connector Version: 1.0.2 \
-Product Vendor: Bolster \
-Product Name: Checkphish \
+Publisher: Splunk Community <br>
+Connector Version: 1.0.2 <br>
+Product Vendor: Bolster <br>
+Product Name: Checkphish <br>
 Minimum Product Version: 5.0.0
 
 This app provides investigative actions for bolster.ai and checkphish.ai
@@ -16,18 +16,19 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 -------- | -------- | ---- | -----------
 **api_url** | required | string | API URL for Scan Requests |
 **api_key** | required | password | API Key |
+**verify_server_cert** | optional | boolean | Verify the TLS certificate presented by the CheckPhish API |
 
 ### Supported Actions
 
-[test connectivity](#action-test-connectivity) - Validate the asset configuration for connectivity using supplied configuration \
-[check status](#action-check-status) - Get URL scan Results \
+[test connectivity](#action-test-connectivity) - Validate the asset configuration for connectivity using supplied configuration <br>
+[check status](#action-check-status) - Get URL scan Results <br>
 [detonate url](#action-detonate-url) - Submit a URL for scan
 
 ## action: 'test connectivity'
 
 Validate the asset configuration for connectivity using supplied configuration
 
-Type: **test** \
+Type: **test** <br>
 Read only: **True**
 
 #### Action Parameters
@@ -42,7 +43,7 @@ No Output
 
 Get URL scan Results
 
-Type: **investigate** \
+Type: **investigate** <br>
 Read only: **True**
 
 #### Action Parameters
@@ -76,7 +77,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Submit a URL for scan
 
-Type: **generic** \
+Type: **generic** <br>
 Read only: **False**
 
 #### Action Parameters
@@ -105,7 +106,7 @@ ______________________________________________________________________
 
 Auto-generated Splunk SOAR Connector documentation.
 
-Copyright 2025 Splunk Inc.
+Copyright 2026 Splunk Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
